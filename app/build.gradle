@@ -1,4 +1,5 @@
 apply plugin: 'com.android.application'
+apply plugin: 'com.neenbedankt.android-apt'
 
 android {
     compileSdkVersion 23
@@ -6,7 +7,7 @@ android {
 
     defaultConfig {
         applicationId "com.noopinion.haste.noopinion"
-        minSdkVersion 16
+        minSdkVersion 21
         targetSdkVersion 23
         versionCode 1
         versionName "1.0"
@@ -14,12 +15,30 @@ android {
     buildTypes {
         release {
             minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
 }
 
+repositories {
+    maven { url "https://clojars.org/repo/" }
+}
+
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
-    compile 'com.android.support:appcompat-v7:23.1.0'
+
+    compile 'com.android.support:appcompat-v7:23.1.1'
+
+    //ParcelablePlease
+    compile 'com.hannesdorfmann.parcelableplease:annotation:1.0.1'
+    apt 'com.hannesdorfmann.parcelableplease:processor:1.0.1'
+
+    //IcePick
+    compile 'frankiesardo:icepick:3.1.0'
+    provided 'frankiesardo:icepick-processor:3.1.0'
+
+    //Retrofit
+    compile 'com.squareup.retrofit:retrofit:2.0.0-beta2'
+
+    //Picasso
+    compile 'com.squareup.picasso:picasso:2.5.2'
 }
