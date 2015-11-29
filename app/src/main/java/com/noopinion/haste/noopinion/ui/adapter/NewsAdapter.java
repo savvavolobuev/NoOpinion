@@ -1,11 +1,13 @@
 package com.noopinion.haste.noopinion.ui.adapter;
 
-import android.support.annotation.NonNull;
+import android.app.Activity;
 import android.support.v7.widget.RecyclerView;
 import android.view.ViewGroup;
 
-import com.hannesdorfmann.adapterdelegates.AbsAdapterDelegate;
+import com.hannesdorfmann.adapterdelegates.AdapterDelegatesManager;
 import com.noopinion.haste.noopinion.model.News;
+import com.noopinion.haste.noopinion.ui.adapter.Delegate.NewsFullDelegate;
+import com.noopinion.haste.noopinion.ui.adapter.Delegate.NewsLessDelegate;
 
 import java.util.List;
 
@@ -13,64 +15,35 @@ import java.util.List;
  * Created by haste on 29.11.15.
  */
 public class NewsAdapter extends RecyclerView.Adapter {
+
+    private AdapterDelegatesManager<List<News>> delegatesManager;
+    private List<News> items;
+
+    public NewsAdapter(Activity activity, List<News> items){
+        this.items = items;
+        delegatesManager = new AdapterDelegatesManager<>();
+        delegatesManager.addDelegate(new NewsFullDelegate(activity, 0));
+        delegatesManager.addDelegate(new NewsLessDelegate(activity, 1));
+    }
+
+    @Override
+    public int getItemViewType(int position) {
+        return delegatesManager.getItemViewType(items, position);
+    }
+
+
     @Override
     public RecyclerView.ViewHolder onCreateViewHolder(final ViewGroup parent, final int viewType) {
-        return null;
+        return delegatesManager.onCreateViewHolder(parent, viewType);
     }
 
     @Override
     public void onBindViewHolder(final RecyclerView.ViewHolder holder, final int position) {
-
+        delegatesManager.onBindViewHolder(items, position, holder);
     }
 
     @Override
     public int getItemCount() {
-        return 0;
-    }
-
-    final class NewsFullDelegate extends AbsAdapterDelegate<List<News>> {
-
-        public NewsFullDelegate(final int viewType) {
-            super(viewType);
-        }
-
-        @Override
-        public boolean isForViewType(final List<News> items, final int position) {
-            return false;
-        }
-
-        @NonNull
-        @Override
-        public RecyclerView.ViewHolder onCreateViewHolder(final ViewGroup parent) {
-            return null;
-        }
-
-        @Override
-        public void onBindViewHolder(@NonNull final List<News> items, final int position, @NonNull final RecyclerView.ViewHolder holder) {
-
-        }
-    }
-
-    final class NewsLessDelegate extends AbsAdapterDelegate<List<News>>{
-
-        public NewsLessDelegate(final int viewType) {
-            super(viewType);
-        }
-
-        @Override
-        public boolean isForViewType(@NonNull final List<News> items, final int position) {
-            return false;
-        }
-
-        @NonNull
-        @Override
-        public RecyclerView.ViewHolder onCreateViewHolder(final ViewGroup parent) {
-            return null;
-        }
-
-        @Override
-        public void onBindViewHolder(@NonNull final List<News> items, final int position, @NonNull final RecyclerView.ViewHolder holder) {
-
-        }
+        return items.size();
     }
 }
