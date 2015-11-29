@@ -16,9 +16,6 @@ public final class News implements Parcelable {
     String mLink;
     String mImage;
 
-    private News() {
-    }
-
     public int getId() {
         return mId;
     }
