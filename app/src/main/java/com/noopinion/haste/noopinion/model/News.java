@@ -16,6 +16,74 @@ public final class News implements Parcelable {
     String mLink;
     String mImage;
 
+    private News() {
+    }
+
+    public int getId() {
+        return mId;
+    }
+
+    public void setId(final int id) {
+        mId = id;
+    }
+
+    public String getText() {
+        return mText;
+    }
+
+    public void setText(final String text) {
+        mText = text;
+    }
+
+    public String getLink() {
+        return mLink;
+    }
+
+    public void setLink(final String link) {
+        mLink = link;
+    }
+
+    public String getImage() {
+        return mImage;
+    }
+
+    public void setImage(final String image) {
+        mImage = image;
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        final News news = (News) o;
+
+        if (mId != news.mId) return false;
+        if (mText != null ? !mText.equals(news.mText) : news.mText != null) return false;
+        if (mLink != null ? !mLink.equals(news.mLink) : news.mLink != null) return false;
+        return !(mImage != null ? !mImage.equals(news.mImage) : news.mImage != null);
+
+    }
+
+    @Override
+    public int hashCode() {
+        int result = mId;
+        result = 31 * result + (mText != null ? mText.hashCode() : 0);
+        result = 31 * result + (mLink != null ? mLink.hashCode() : 0);
+        result = 31 * result + (mImage != null ? mImage.hashCode() : 0);
+        return result;
+    }
+
+    @Override
+    public String toString() {
+        return "News{" +
+                "mId=" + mId +
+                ", mText='" + mText + '\'' +
+                ", mLink='" + mLink + '\'' +
+                ", mImage='" + mImage + '\'' +
+                '}';
+    }
+
     @Override
     public int describeContents() {
         return 0;

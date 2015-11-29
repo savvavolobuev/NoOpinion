@@ -17,6 +17,14 @@ final class MockNewsProvider implements NewsProvider {
     @Override
     public List<News> getNews() {
         final List<News> news = new ArrayList<>();
-        return null;
+
+        News n;
+        for (int i = 0; i < 10; i++) {
+            n = new News();
+            n.setId(i + 1);
+            n.setText("Хуйнанэ номер " + (i + 1));
+            news.add(n);
+        }
+        return news;
     }
 }
