@@ -41,4 +41,7 @@ dependencies {
 
     //Picasso
     compile 'com.squareup.picasso:picasso:2.5.2'
+
+    //adapter delegate
+    compile 'com.hannesdorfmann:adapterdelegates:1.1.0'
 }
