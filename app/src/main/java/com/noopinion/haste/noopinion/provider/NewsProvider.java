@@ -87,7 +87,7 @@ final class NewsProviderImpl implements NewsProvider {
                             }
                         } catch (Throwable t) {
                             if (callback != null) {
-                                callback.onNewsReceived(new ArrayList<News>(), ERROR_UNKNOWN);
+                                callback.onNewsReceived(new ArrayList<News>(0), ERROR_UNKNOWN);
                             }
                         }
                     }
@@ -103,7 +103,11 @@ final class NewsProviderImpl implements NewsProvider {
     @VisibleForTesting
     @NonNull
     List<News> loadFromCache() {
-        return new Gson().fromJson(mPreferences.getString("news", "[]"), new TypeToken<List<News>>() {}.getType());
+        List<News> news = new Gson().fromJson(mPreferences.getString("news", null), new TypeToken<List<News>>() {}.getType());
+        if (news == null) {
+            news = new ArrayList<>(0);
+        }
+        return news;
     }
 }
 
