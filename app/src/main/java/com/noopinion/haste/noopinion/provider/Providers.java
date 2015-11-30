@@ -1,5 +1,6 @@
 package com.noopinion.haste.noopinion.provider;
 
+import android.content.Context;
 import android.support.annotation.NonNull;
 
 /**
@@ -8,8 +9,8 @@ import android.support.annotation.NonNull;
 public final class Providers {
 
     @NonNull
-    public static NewsProvider createNewsProvider() {
-        return new MockNewsProvider();
+    public static NewsProvider createNewsProvider(@NonNull final Context context) {
+        return new NewsProviderImpl(context);
     }
 
     private Providers() {
