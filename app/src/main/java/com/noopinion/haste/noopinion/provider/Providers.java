@@ -10,7 +10,7 @@ public final class Providers {
 
     @NonNull
     public static NewsProvider createNewsProvider(@NonNull final Context context) {
-        return new NewsProviderImpl(context);
+        return new NewsRemoteCachingProvider(context);
     }
 
     private Providers() {

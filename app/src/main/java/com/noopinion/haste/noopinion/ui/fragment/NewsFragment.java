@@ -19,10 +19,12 @@ import android.widget.TextView;
 import android.widget.ViewAnimator;
 
 import com.noopinion.haste.noopinion.R;
-import com.noopinion.haste.noopinion.model.NewsCursor;
+import com.noopinion.haste.noopinion.model.News;
 import com.noopinion.haste.noopinion.provider.NewsProvider;
 import com.noopinion.haste.noopinion.provider.Providers;
 import com.noopinion.haste.noopinion.ui.adapter.NewsAdapter;
+
+import java.util.List;
 
 import butterknife.Bind;
 import butterknife.ButterKnife;
@@ -119,15 +121,16 @@ public final class NewsFragment extends Fragment implements NewsAdapter.Listener
     public void onStart() {
         super.onStart();
 
-        mNewsProvider.getNews(
-                0, 10, new NewsProvider.Callback() {
+        mNewsProvider.loadNews(
+                0, 20, new NewsProvider.Callback() {
                     @Override
-                    public void onNewsReceived(@NonNull final NewsCursor cursor, @NewsProvider.ErrorCode final int errorCode) {
+                    public void onNewsReceived(@NonNull final List<News> news, @NewsProvider.ErrorCode final int errorCode) {
                         getActivity().runOnUiThread(
                                 new Runnable() {
                                     @Override
                                     public void run() {
-                                        mNewsAdapter.changeCursor(cursor);
+                                        mNewsAdapter.setItems(news);
+                                        mNewsAdapter.notifyDataSetChanged();
 
                                         mViewState = STATE_CONTENT;
                                         syncViewState();

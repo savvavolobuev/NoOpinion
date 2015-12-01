@@ -42,9 +42,9 @@ public class NewsProviderTest {
     @Test
     public void checkCache() {
         final NewsProvider provider = Providers.createNewsProvider(RuntimeEnvironment.application);
-        ((NewsProviderImpl) provider).writeToCache(FAKE_NEWS);
+        ((NewsRemoteCachingProvider) provider).writeToCache(FAKE_NEWS);
 
-        Assert.assertEquals(FAKE_NEWS, ((NewsProviderImpl) provider).loadFromCache());
+        Assert.assertEquals(FAKE_NEWS, ((NewsRemoteCachingProvider) provider).loadFromCache());
     }
 
     @Test
@@ -55,7 +55,7 @@ public class NewsProviderTest {
 
         final AtomicInteger value = new AtomicInteger(NewsProvider.ERROR_NONE);
 
-        provider.getNews(
+        provider.loadNews(
                 new NewsProvider.Callback() {
                     @Override
                     public void onNewsReceived(@NonNull final NewsCursor news, @NewsProvider.ErrorCode final int errorCode) {

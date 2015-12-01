@@ -4,5 +4,6 @@
     <string name="app_name">БЕЗМНЕНИЯ</string>
 
     <string name="content_description_link">Link icon</string>
+    <string name="open_news_bucket">Показать новые (%s)</string>
 
 </resources>

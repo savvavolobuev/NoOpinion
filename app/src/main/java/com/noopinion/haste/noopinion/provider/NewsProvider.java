@@ -1,12 +1,10 @@
 package com.noopinion.haste.noopinion.provider;
 
+import android.annotation.SuppressLint;
 import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Context;
-import android.content.SharedPreferences;
 import android.database.Cursor;
-import android.database.DataSetObserver;
-import android.database.MatrixCursor;
 import android.net.Uri;
 import android.provider.BaseColumns;
 import android.support.annotation.IntDef;
@@ -18,11 +16,11 @@ import android.util.Log;
 import com.noopinion.haste.noopinion.BuildConfig;
 import com.noopinion.haste.noopinion.model.News;
 import com.noopinion.haste.noopinion.model.NewsApiResponse;
-import com.noopinion.haste.noopinion.model.NewsCursor;
 import com.noopinion.haste.noopinion.model.db.NewsContentProvider;
 import com.noopinion.haste.noopinion.provider.api.NewsApi;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -36,10 +34,10 @@ import retrofit.Retrofit;
  */
 public interface NewsProvider {
 
-    void getNews(int start, int limit, @Nullable Callback callback);
+    void loadNews(int start, int limit, @Nullable Callback callback);
 
     interface Callback {
-        void onNewsReceived(@NonNull NewsCursor cursor, @ErrorCode int errorCode);
+        void onNewsReceived(@NonNull List<News> news, @ErrorCode int errorCode);
     }
 
     int ERROR_NONE                = 0;
@@ -50,37 +48,26 @@ public interface NewsProvider {
     @interface ErrorCode {}
 }
 
-final class NewsLocalProvider implements NewsProvider {
+final class NewsRemoteCachingProvider implements NewsProvider {
 
-    public NewsLocalProvider(@NonNull final Context context) {
-    }
-
-    @Override
-    public void getNews(final int start, final int limit, @Nullable final Callback callback) {
-
-    }
-}
-
-final class NewsProviderImpl implements NewsProvider {
+    private final NewsLocalProvider mLocalProvider;
 
     private final ExecutorService mExecutorService;
 
-    private final NewsApi           mApi;
-    private final SharedPreferences mPreferences;
+    private final NewsApi mApi;
 
-    private final ContentResolver mContentResolver;
+    public NewsRemoteCachingProvider(@NonNull final Context context) {
+        mLocalProvider = new NewsLocalProvider(context);
 
-    public NewsProviderImpl(@NonNull final Context context) {
         mExecutorService = Executors.newSingleThreadExecutor();
         mApi = new Retrofit.Builder().baseUrl(BuildConfig.BASE_URL).addConverterFactory(GsonConverterFactory.create()).build().create(NewsApi.class);
-        mContentResolver = context.getContentResolver();
-        mPreferences = context.getSharedPreferences("news_cache", Context.MODE_PRIVATE);
     }
 
     @Override
-    public void getNews(final int start, final int limit, @Nullable final Callback callback) {
+    public void loadNews(final int start, final int limit, @Nullable final Callback callback) {
         mExecutorService.submit(
                 new Runnable() {
+                    @SuppressLint("LongLogTag")
                     @Override
                     public void run() {
                         int errorCode = ERROR_NONE;
@@ -88,7 +75,7 @@ final class NewsProviderImpl implements NewsProvider {
                             try {
                                 final Response<NewsApiResponse> response = mApi.getNews(start, limit).execute();
                                 if (response.isSuccess()) {
-                                    writeToCache(response.body().getNews());
+                                    mLocalProvider.cacheNews(response.body().getNews());
                                 } else {
                                     errorCode = ERROR_UNKNOWN;
                                 }
@@ -96,19 +83,56 @@ final class NewsProviderImpl implements NewsProvider {
                                 errorCode = ERROR_NETWORK_UNAVAILABLE;
                             }
                         } catch (Throwable t) {
-                            Log.e("NewsProviderImpl", t.getMessage(), t);
+                            Log.e("NewsRemoteCachingProvider", t.getMessage(), t);
                         } finally {
                             if (callback != null) {
-                                callback.onNewsReceived(loadFromCache(start, limit), errorCode);
+                                callback.onNewsReceived(mLocalProvider.loadNews(), errorCode);
                             }
                         }
                     }
                 }
         );
     }
+}
+
+final class NewsLocalProvider {
+
+    private final ContentResolver mContentResolver;
+
+    public NewsLocalProvider(@NonNull final Context context) {
+        mContentResolver = context.getContentResolver();
+    }
 
     @VisibleForTesting
-    void writeToCache(@NonNull final List<News> news) {
+    @NonNull
+    List<News> loadNews() {
+        final List<News> news = new ArrayList<>();
+
+        final Cursor cursor = mContentResolver.query(
+                NewsContentProvider.CONTENT_URI,
+                null, null, null, null
+        );
+        News n;
+        if (cursor != null && cursor.moveToFirst()) {
+            do {
+                n = new News();
+                n.setId(cursor.getInt(cursor.getColumnIndex(BaseColumns._ID)));
+                n.setText(cursor.getString(cursor.getColumnIndex("txt")));
+                n.setLink(cursor.getString(cursor.getColumnIndex("link")));
+                n.setImage(cursor.getString(cursor.getColumnIndex("image")));
+
+                news.add(n);
+            } while (cursor.moveToNext());
+        }
+        if (cursor != null) {
+            cursor.close();
+        }
+
+        return news;
+    }
+
+    @VisibleForTesting
+    void cacheNews(@NonNull final List<News> news) {
         final ContentValues[] values = new ContentValues[news.size()];
 
         int counter = 0;
@@ -123,80 +147,5 @@ final class NewsProviderImpl implements NewsProvider {
         }
 
         mContentResolver.bulkInsert(Uri.parse("content://" + NewsContentProvider.AUTHORITY + "/news"), values);
-    }
-
-    @VisibleForTesting
-    @NonNull
-    NewsCursor loadFromCache(final int start, final int limit) {
-        final Cursor cursor = mContentResolver.query(
-                Uri.parse(NewsContentProvider.CONTENT_URI + "?start=" + start + "&limit=" + limit),
-                null, null, null, null
-        );
-        if (cursor != null && cursor.moveToFirst()) {
-            return new NewsCursorImpl(cursor);
-        } else {
-            if (cursor != null) {
-                cursor.close();
-            }
-
-            return new NewsCursorImpl(new MatrixCursor(null, 0));
-        }
-    }
-
-    static final class NewsCursorImpl implements NewsCursor {
-
-        private final Cursor mCursor;
-
-        public NewsCursorImpl(@NonNull final Cursor cursor) {
-            mCursor = cursor;
-        }
-
-        @Override
-        public long getId() {
-            return mCursor.getLong(mCursor.getColumnIndex(BaseColumns._ID));
-        }
-
-        @NonNull
-        @Override
-        public String getText() {
-            return mCursor.getString(mCursor.getColumnIndex("txt"));
-        }
-
-        @NonNull
-        @Override
-        public String getLink() {
-            return mCursor.getString(mCursor.getColumnIndex("link"));
-        }
-
-        @NonNull
-        @Override
-        public String getImage() {
-            return mCursor.getString(mCursor.getColumnIndex("image"));
-        }
-
-        @Override
-        public void close() {
-            mCursor.close();
-        }
-
-        @Override
-        public int getCount() {
-            return mCursor.getCount();
-        }
-
-        @Override
-        public boolean moveToPosition(final int position) {
-            return mCursor.moveToPosition(position);
-        }
-
-        @Override
-        public void registerDataSetObserver(@NonNull final DataSetObserver observer) {
-            mCursor.registerDataSetObserver(observer);
-        }
-
-        @Override
-        public void unregisterDataSetObserver(@NonNull final DataSetObserver observer) {
-            mCursor.unregisterDataSetObserver(observer);
-        }
     }
 }

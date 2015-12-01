@@ -32,16 +32,13 @@ public final class NewsContentProvider extends ContentProvider {
     @Override
     public Cursor query(@NonNull final Uri uri, final String[] projection, final String selection, final String[] selectionArgs,
                         final String sortOrder) {
-        final String start = uri.getQueryParameter("start");
-        final String limit = uri.getQueryParameter("limit");
-
         final SQLiteDatabase database = mOpenHelper.getWritableDatabase();
         if (database.isOpen()) {
             final Cursor c = database.query(
                     uri.getLastPathSegment(),
-                    null,
-                    BaseColumns._ID + " <= ((SELECT MAX(_id) FROM news) - " + start + ")",
-                    null, null, null, BaseColumns._ID + " desc", limit
+                    null, null,
+                    null, null, null,
+                    BaseColumns._ID + " desc", null
             );
 
             if (getContext() != null) {
