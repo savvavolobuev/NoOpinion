@@ -1,27 +1,28 @@
 package com.noopinion.haste.noopinion.ui.fragment;
 
-import android.app.Fragment;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.IntDef;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.design.widget.AppBarLayout;
+import android.support.design.widget.CoordinatorLayout;
+import android.support.v4.app.Fragment;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.TextView;
 import android.widget.ViewAnimator;
 
 import com.noopinion.haste.noopinion.R;
-import com.noopinion.haste.noopinion.model.News;
+import com.noopinion.haste.noopinion.model.NewsCursor;
 import com.noopinion.haste.noopinion.provider.NewsProvider;
 import com.noopinion.haste.noopinion.provider.Providers;
 import com.noopinion.haste.noopinion.ui.adapter.NewsAdapter;
-
-import java.util.ArrayList;
-import java.util.List;
 
 import butterknife.Bind;
 import butterknife.ButterKnife;
@@ -30,7 +31,7 @@ import icepick.Icepick;
 /**
  * Created by Ivan Gusev on 30.11.2015.
  */
-public final class NewsFragment extends Fragment implements NewsAdapter.Listener {
+public final class NewsFragment extends Fragment implements NewsAdapter.Listener, AppBarLayout.OnOffsetChangedListener {
 
     public static final String TAG = NewsFragment.class.getName();
 
@@ -45,8 +46,8 @@ public final class NewsFragment extends Fragment implements NewsAdapter.Listener
     /**
      * View's state:
      */
-    private static final int STATE_LOADING = 0;
-    private static final int STATE_CONTENT = 1;
+    private static final int STATE_CONTENT = 0;
+    private static final int STATE_LOADING = 1;
     private static final int STATE_ERROR   = 2;
 
     @IntDef(value = {STATE_LOADING, STATE_CONTENT, STATE_ERROR})
@@ -54,8 +55,6 @@ public final class NewsFragment extends Fragment implements NewsAdapter.Listener
 
     @State
     int mViewState = STATE_LOADING;
-    @State
-    ArrayList<News> mNews;
 
     /**
      * NoView state variables:
@@ -67,6 +66,13 @@ public final class NewsFragment extends Fragment implements NewsAdapter.Listener
      */
     @Bind(R.id.content_animator)
     ViewAnimator mContentAnimator;
+
+    @Bind(R.id.coordinator)
+    CoordinatorLayout mCoordinatorLayout;
+    @Bind(R.id.appbar)
+    AppBarLayout      mAppBarLayout;
+    @Bind(R.id.title)
+    TextView          mTitleView;
 
     @Bind(R.id.recycler)
     RecyclerView mRecyclerView;
@@ -100,12 +106,11 @@ public final class NewsFragment extends Fragment implements NewsAdapter.Listener
 
         ButterKnife.bind(this, view);
 
+        mTitleView.setText(R.string.app_name);
+
         mRecyclerView.setHasFixedSize(true);
         mRecyclerView.setLayoutManager(new LinearLayoutManager(getActivity()));
         mRecyclerView.setAdapter(mNewsAdapter);
-
-        mNewsAdapter.setItems(mNews);
-        mNewsAdapter.notifyDataSetChanged();
 
         syncViewState();
     }
@@ -115,17 +120,14 @@ public final class NewsFragment extends Fragment implements NewsAdapter.Listener
         super.onStart();
 
         mNewsProvider.getNews(
-                new NewsProvider.Callback() {
+                0, 10, new NewsProvider.Callback() {
                     @Override
-                    public void onNewsReceived(@NonNull final List<News> news, @NewsProvider.ErrorCode final int errorCode) {
+                    public void onNewsReceived(@NonNull final NewsCursor cursor, @NewsProvider.ErrorCode final int errorCode) {
                         getActivity().runOnUiThread(
                                 new Runnable() {
                                     @Override
                                     public void run() {
-                                        mNews = new ArrayList<>(news);
-
-                                        mNewsAdapter.setItems(mNews);
-                                        mNewsAdapter.notifyDataSetChanged();
+                                        mNewsAdapter.changeCursor(cursor);
 
                                         mViewState = STATE_CONTENT;
                                         syncViewState();
@@ -135,6 +137,20 @@ public final class NewsFragment extends Fragment implements NewsAdapter.Listener
                     }
                 }
         );
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+
+        mAppBarLayout.addOnOffsetChangedListener(this);
+    }
+
+    @Override
+    public void onPause() {
+        mAppBarLayout.removeOnOffsetChangedListener(this);
+
+        super.onPause();
     }
 
     @Override
@@ -158,6 +174,11 @@ public final class NewsFragment extends Fragment implements NewsAdapter.Listener
         if (getActivity().getPackageManager().resolveActivity(browseIntent, 0) != null) {
             startActivity(browseIntent);
         }
+    }
+
+    @Override
+    public void onOffsetChanged(final AppBarLayout appBarLayout, final int verticalOffset) {
+        Log.d(TAG, "");
     }
 
     private void syncViewState() {

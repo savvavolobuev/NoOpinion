@@ -4,6 +4,7 @@ import android.support.annotation.NonNull;
 
 import com.noopinion.haste.noopinion.BuildConfig;
 import com.noopinion.haste.noopinion.model.News;
+import com.noopinion.haste.noopinion.model.NewsCursor;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -57,7 +58,7 @@ public class NewsProviderTest {
         provider.getNews(
                 new NewsProvider.Callback() {
                     @Override
-                    public void onNewsReceived(@NonNull final List<News> news, @NewsProvider.ErrorCode final int errorCode) {
+                    public void onNewsReceived(@NonNull final NewsCursor news, @NewsProvider.ErrorCode final int errorCode) {
                         value.set(errorCode);
                         latch.countDown();
                     }
