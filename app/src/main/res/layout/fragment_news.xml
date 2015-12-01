@@ -64,7 +64,9 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             app:behavior_overlapTop="?actionBarSize"
-            app:layout_behavior="@string/appbar_scrolling_view_behavior"/>
+            app:layout_behavior="@string/appbar_scrolling_view_behavior"
+            android:clipToPadding="false"
+            android:paddingBottom="48dp"/>
 
     </android.support.design.widget.CoordinatorLayout>
 
