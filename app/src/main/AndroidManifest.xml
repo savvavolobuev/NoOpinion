@@ -20,7 +20,7 @@
         </activity>
         <activity
             android:name=".ui.activity.ImageActivity"
-            android:screenOrientation="portrait"></activity>
+            android:screenOrientation="portrait"/>
 
         <provider
             android:name=".model.db.NewsContentProvider"

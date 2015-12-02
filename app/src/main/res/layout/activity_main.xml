@@ -1,16 +1,6 @@
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout android:id="@+id/content"
+             xmlns:android="http://schemas.android.com/apk/res/android"
              xmlns:tools="http://schemas.android.com/tools"
              android:layout_width="match_parent"
              android:layout_height="match_parent"
-             android:id="@+id/content"
-             tools:context="com.noopinion.haste.noopinion.MainActivity">
-         
-
-    <fragment
-        android:id="@+id/main_fragment"
-        android:name="com.noopinion.haste.noopinion.ui.fragment.MainFragment"
-        android:layout_width="0dp"
-        android:layout_height="match_parent"
-        android:layout_weight="1"/>
-
-</FrameLayout>
+             tools:context="com.noopinion.haste.noopinion.MainActivity"/>

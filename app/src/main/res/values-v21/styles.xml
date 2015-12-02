@@ -2,6 +2,12 @@
 
     <!-- Base application theme. -->
     <style name="Theme.Base.App">
+        <item name="android:progressBarStyleSmall">@style/NOProgressBar</item>
+    </style>
+
+    <style name="NOProgressBar" parent="Widget.AppCompat.ProgressBar">
+        <item name="android:indeterminateTint">@color/primary</item>
+        <item name="android:indeterminateTintMode">src_in</item>
     </style>
 
 </resources>

@@ -40,15 +40,15 @@
                 android:id="@+id/text"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginEnd="8dp"
+                android:layout_marginRight="8dp"
                 android:layout_weight="1"
                 android:textColor="?android:textColorPrimaryInverse"
                 android:textSize="16sp"
 
-                tools:text="Тут написан рандомный текст для превью"/>
+                tools:text="Тут написан рандомный текст для превью"
+                tools:ignore="RtlHardcoded"/>
 
             <ImageView
-                android:transitionName="img"
                 android:id="@+id/link"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -56,7 +56,6 @@
                 android:background="?android:actionBarItemBackground"
                 android:contentDescription="@string/content_description_link"
                 android:src="@drawable/ic_link"
-                android:tint="?android:colorPrimary"
 
                 tools:tag="link is stored here"/>
         </LinearLayout>

@@ -10,7 +10,5 @@
         android:layout_height="32dp"
         android:layout_gravity="center"
         android:layout_margin="16dp"
-        android:indeterminate="true"
-        android:indeterminateTint="@color/primary"
-        android:indeterminateTintMode="src_in"/>
+        android:indeterminate="true"/>
 </FrameLayout>

@@ -2,9 +2,12 @@ package com.noopinion.haste.noopinion.ui.adapter;
 
 import android.app.Activity;
 import android.database.DataSetObserver;
+import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.v4.content.res.ResourcesCompat;
 import android.support.v7.widget.RecyclerView;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
@@ -246,15 +249,15 @@ class LessNewsDelegate extends NewsItemDelegate {
 
 final class FullNewsDelegate extends LessNewsDelegate {
 
-    private final Drawable mTintedErrorDrawable;
+    private Drawable mTintedErrorDrawable;
 
     FullNewsDelegate(@NonNull final Activity activity, @NonNull final DelegationAdapter delegationAdapter,
                      final int viewType) {
         super(activity, delegationAdapter, viewType);
 
-        mTintedErrorDrawable = activity.getResources().getDrawable(R.drawable.ic_sad_face, activity.getTheme());
+        mTintedErrorDrawable = ResourcesCompat.getDrawable(activity.getResources(), R.drawable.ic_sad_face, activity.getTheme());
         if (mTintedErrorDrawable != null) {
-            mTintedErrorDrawable.setTint(activity.getResources().getColor(R.color.primary));
+            mTintedErrorDrawable = new ColorDrawable(Color.TRANSPARENT);
         }
     }
 

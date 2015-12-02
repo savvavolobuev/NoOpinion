@@ -1,6 +1,5 @@
 package com.noopinion.haste.noopinion.ui.fragment;
 
-import android.app.ActivityOptions;
 import android.content.Intent;
 import android.content.res.Resources;
 import android.net.Uri;
@@ -11,6 +10,7 @@ import android.support.annotation.Nullable;
 import android.support.design.widget.AppBarLayout;
 import android.support.design.widget.CoordinatorLayout;
 import android.support.v4.app.ActivityCompat;
+import android.support.v4.app.ActivityOptionsCompat;
 import android.support.v4.app.Fragment;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.widget.LinearLayoutManager;
@@ -38,7 +38,7 @@ import icepick.State;
  */
 public final class NewsFragment extends Fragment implements NewsAdapter.Listener, SwipeRefreshLayout.OnRefreshListener {
 
-    public static final String TAG = NewsFragment.class.getName();
+    public static final String TAG          = NewsFragment.class.getName();
     public static final String INTENT_IMAGE = "intent_image";
 
     @NonNull
@@ -47,14 +47,14 @@ public final class NewsFragment extends Fragment implements NewsAdapter.Listener
     }
 
     private NewsProvider mNewsProvider;
-    private NewsAdapter mNewsAdapter;
+    private NewsAdapter  mNewsAdapter;
 
     /**
      * View's state:
      */
     private static final int STATE_CONTENT = 0;
     private static final int STATE_LOADING = 1;
-    private static final int STATE_ERROR = 3;
+    private static final int STATE_ERROR   = 3;
 
     @IntDef(value = {STATE_LOADING, STATE_CONTENT, STATE_ERROR})
     @interface ViewState {
@@ -62,11 +62,11 @@ public final class NewsFragment extends Fragment implements NewsAdapter.Listener
 
     @ViewState
     @State
-    int mViewState = STATE_LOADING;
+    int     mViewState = STATE_LOADING;
     @State
-    int mStart = 0;
+    int     mStart     = 0;
     @State
-    boolean mLoading = false;
+    boolean mLoading   = false;
 
     /**
      * Android Views:
@@ -77,14 +77,14 @@ public final class NewsFragment extends Fragment implements NewsAdapter.Listener
     @Bind(R.id.coordinator)
     CoordinatorLayout mCoordinatorLayout;
     @Bind(R.id.appbar)
-    AppBarLayout mAppBarLayout;
+    AppBarLayout      mAppBarLayout;
     @Bind(R.id.title)
-    TextView mTitleView;
+    TextView          mTitleView;
 
     @Bind(R.id.swipe_refresh_layout)
     SwipeRefreshLayout mSwipeRefreshLayout;
     @Bind(R.id.recycler)
-    RecyclerView mRecyclerView;
+    RecyclerView       mRecyclerView;
 
     LinearLayoutManager mLayoutManager;
 
@@ -192,7 +192,7 @@ public final class NewsFragment extends Fragment implements NewsAdapter.Listener
     public void onImageClick(@NonNull final View view, @NonNull final String image) {
         Intent animIntent = new Intent(getActivity(), ImageActivity.class);
         animIntent.putExtra(INTENT_IMAGE, image);
-        ActivityOptions options = ActivityOptions.makeSceneTransitionAnimation(getActivity(), view, "img");
+        ActivityOptionsCompat options = ActivityOptionsCompat.makeSceneTransitionAnimation(getActivity(), view, ImageActivity.TRANSITION_IMAGE_NAME);
         ActivityCompat.startActivity(getActivity(), animIntent, options.toBundle());
     }
 

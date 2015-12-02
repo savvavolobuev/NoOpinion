@@ -45,16 +45,18 @@
                         android:layout_height="2dp"
                         android:layout_centerVertical="true"
                         android:layout_margin="16dp"
-                        android:layout_toStartOf="@id/title"
-                        android:background="@color/primary"/>
+                        android:layout_toLeftOf="@id/title"
+                        android:background="@color/primary"
+                        tools:ignore="RtlHardcoded"/>
 
                     <View
                         android:layout_width="match_parent"
                         android:layout_height="2dp"
                         android:layout_centerVertical="true"
                         android:layout_margin="16dp"
-                        android:layout_toEndOf="@id/title"
-                        android:background="@color/primary"/>
+                        android:layout_toRightOf="@id/title"
+                        android:background="@color/primary"
+                        tools:ignore="RtlHardcoded"/>
                 </RelativeLayout>
             </android.support.design.widget.CollapsingToolbarLayout>
 
