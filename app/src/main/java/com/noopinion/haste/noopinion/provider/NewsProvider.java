@@ -42,12 +42,13 @@ public interface NewsProvider {
         void onNewsReceived(@NonNull NewsCursor cursor, int downloaded, @ErrorCode int errorCode);
     }
 
-    int ERROR_NONE                = 0;
-    int ERROR_UNKNOWN             = 1;
+    int ERROR_NONE = 0;
+    int ERROR_UNKNOWN = 1;
     int ERROR_NETWORK_UNAVAILABLE = 2;
 
     @IntDef(value = {ERROR_NONE, ERROR_UNKNOWN, ERROR_NETWORK_UNAVAILABLE})
-    @interface ErrorCode {}
+    @interface ErrorCode {
+    }
 }
 
 final class NewsRemoteCachingProvider implements NewsProvider {
@@ -72,31 +73,46 @@ final class NewsRemoteCachingProvider implements NewsProvider {
                     @SuppressLint("LongLogTag")
                     @Override
                     public void run() {
-                        int errorCode = ERROR_NONE;
-                        int downloaded = 0;
-                        try {
-                            try {
-                                final Response<NewsApiResponse> response = mApi.getNews(start, limit).execute();
-                                if (response.isSuccess()) {
-                                    final List<News> downloadedNews = response.body().getNews();
-                                    downloaded = downloadedNews.size();
-                                    mLocalProvider.cacheNews(downloadedNews);
-                                } else {
-                                    errorCode = ERROR_UNKNOWN;
-                                }
-                            } catch (IOException e) {
-                                errorCode = ERROR_NETWORK_UNAVAILABLE;
-                            }
-                        } catch (Throwable t) {
-                            Log.e("NewsRemoteCachingProvider", t.getMessage(), t);
-                        } finally {
-                            if (callback != null) {
-                                callback.onNewsReceived(mLocalProvider.loadNews(start, limit), downloaded, errorCode);
-                            }
-                        }
+                        loadNews(start, limit, true, callback);
                     }
                 }
         );
+    }
+
+    @SuppressLint("LongLogTag")
+    void loadNews(final int start, final int limit, final boolean recursionAllowed, @Nullable final Callback callback) {
+        int errorCode = ERROR_NONE;
+        int downloaded = 0;
+        long maxLocalId = mLocalProvider.getMaxId();
+        try {
+            final Response<NewsApiResponse> response = mApi.getNews(start, limit).execute();
+            if (response.isSuccess()) {
+                final List<News> downloadedNews = response.body().getNews();
+                downloaded = downloadedNews.size();
+                if (downloaded != 0 && maxLocalId != -1) {
+                    long minRemoteId = downloadedNews.get(downloaded - 1).getId();
+                    int diff = (int) (minRemoteId - maxLocalId);
+                    if (diff > 1) {
+                        int newLimit = limit + diff;
+                        if (recursionAllowed) {
+                            loadNews(start, newLimit, false, callback);
+                            return;
+                        }
+                    }
+                }
+                mLocalProvider.cacheNews(downloadedNews);
+            } else {
+                errorCode = ERROR_UNKNOWN;
+            }
+        } catch (IOException e) {
+            errorCode = ERROR_NETWORK_UNAVAILABLE;
+        } catch (Throwable t) {
+            Log.e("NewsRemoteCachingProvider", t.getMessage(), t);
+        } finally {
+            if (callback != null) {
+                callback.onNewsReceived(mLocalProvider.loadNews(), downloaded, errorCode);
+            }
+        }
     }
 }
 
@@ -110,8 +126,8 @@ final class NewsLocalProvider {
 
     @VisibleForTesting
     @NonNull
-    NewsCursor loadNews(final int start, final int limit) {
-        final Cursor cursor = mContentResolver.query(NewsContentProvider.CONTENT_URI, null, null, null, null);
+    NewsCursor loadNews() {
+        final Cursor cursor = mContentResolver.query(NewsContentProvider.CONTENT_URI, null, null, null, BaseColumns._ID + " DESC");
 
         if (cursor != null && cursor.moveToFirst()) {
             return new NewsCursorImpl(cursor);
@@ -121,6 +137,15 @@ final class NewsLocalProvider {
         }
 
         return new NewsCursorImpl(new MatrixCursor(new String[]{BaseColumns._ID, "txt", "link", "image"}, 0));
+    }
+
+    @VisibleForTesting
+    long getMaxId() {
+        NewsCursor cursor = loadNews();
+        if (cursor.getCount() == 0) {
+            return -1;
+        }
+        return cursor.getId();
     }
 
     @VisibleForTesting

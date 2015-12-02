@@ -36,9 +36,9 @@ public final class NewsContentProvider extends ContentProvider {
         if (database.isOpen()) {
             final Cursor c = database.query(
                     uri.getLastPathSegment(),
-                    null, null,
+                    projection, null,
                     null, null, null,
-                    BaseColumns._ID + " desc", null
+                    sortOrder, null
             );
 
             if (getContext() != null) {

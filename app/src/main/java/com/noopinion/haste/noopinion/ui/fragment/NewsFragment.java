@@ -2,6 +2,7 @@ package com.noopinion.haste.noopinion.ui.fragment;
 
 import android.app.ActivityOptions;
 import android.content.Intent;
+import android.content.res.Resources;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.IntDef;
@@ -39,31 +40,33 @@ public final class NewsFragment extends Fragment implements NewsAdapter.Listener
 
     public static final String TAG = NewsFragment.class.getName();
     public static final String INTENT_IMAGE = "intent_image";
+
     @NonNull
     public static NewsFragment create() {
         return new NewsFragment();
     }
 
     private NewsProvider mNewsProvider;
-    private NewsAdapter  mNewsAdapter;
+    private NewsAdapter mNewsAdapter;
 
     /**
      * View's state:
      */
     private static final int STATE_CONTENT = 0;
     private static final int STATE_LOADING = 1;
-    private static final int STATE_ERROR   = 3;
+    private static final int STATE_ERROR = 3;
 
     @IntDef(value = {STATE_LOADING, STATE_CONTENT, STATE_ERROR})
-    @interface ViewState {}
+    @interface ViewState {
+    }
 
     @ViewState
     @State
-    int     mViewState = STATE_LOADING;
+    int mViewState = STATE_LOADING;
     @State
-    int     mStart     = 0;
+    int mStart = 0;
     @State
-    boolean mLoading   = false;
+    boolean mLoading = false;
 
     /**
      * Android Views:
@@ -74,14 +77,14 @@ public final class NewsFragment extends Fragment implements NewsAdapter.Listener
     @Bind(R.id.coordinator)
     CoordinatorLayout mCoordinatorLayout;
     @Bind(R.id.appbar)
-    AppBarLayout      mAppBarLayout;
+    AppBarLayout mAppBarLayout;
     @Bind(R.id.title)
-    TextView          mTitleView;
+    TextView mTitleView;
 
     @Bind(R.id.swipe_refresh_layout)
     SwipeRefreshLayout mSwipeRefreshLayout;
     @Bind(R.id.recycler)
-    RecyclerView       mRecyclerView;
+    RecyclerView mRecyclerView;
 
     LinearLayoutManager mLayoutManager;
 
@@ -142,6 +145,11 @@ public final class NewsFragment extends Fragment implements NewsAdapter.Listener
         mRecyclerView.addOnScrollListener(mOnScrollListener);
 
         mSwipeRefreshLayout.setOnRefreshListener(this);
+        final Resources res = getResources();
+        mSwipeRefreshLayout.setColorSchemeColors(
+                res.getColor(R.color.primary),
+                res.getColor(android.R.color.black)
+        );
 
         syncViewState();
     }
@@ -173,7 +181,7 @@ public final class NewsFragment extends Fragment implements NewsAdapter.Listener
     }
 
     @Override
-    public void onLinkClick(@NonNull final View view,@NonNull final String link) {
+    public void onLinkClick(@NonNull final View view, @NonNull final String link) {
         final Intent browseIntent = new Intent(Intent.ACTION_VIEW).setData(Uri.parse(link));
         if (getActivity().getPackageManager().resolveActivity(browseIntent, 0) != null) {
             startActivity(browseIntent);
@@ -182,9 +190,9 @@ public final class NewsFragment extends Fragment implements NewsAdapter.Listener
 
     @Override
     public void onImageClick(@NonNull final View view, @NonNull final String image) {
-        Intent animIntent = new Intent(getActivity(),ImageActivity.class);
+        Intent animIntent = new Intent(getActivity(), ImageActivity.class);
         animIntent.putExtra(INTENT_IMAGE, image);
-        ActivityOptions options = ActivityOptions.makeSceneTransitionAnimation(getActivity(),view,"img");
+        ActivityOptions options = ActivityOptions.makeSceneTransitionAnimation(getActivity(), view, "img");
         ActivityCompat.startActivity(getActivity(), animIntent, options.toBundle());
     }
 
