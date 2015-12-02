@@ -49,10 +49,20 @@ public final class NewsAdapter extends AbsDelegationAdapter<NewsCursor> implemen
         delegatesManager.addDelegate(new ProgressDelegate(activity, this, 2));
     }
 
+    public void enableProgress() {
+        mProgressEnabled = true;
+
+        if(mDataValid && items != null) {
+            notifyDataSetChanged();
+        }
+    }
+
     public void disableProgress() {
         mProgressEnabled = false;
 
-        notifyItemRemoved(items.getCount());
+        if(mDataValid && items != null) {
+            notifyDataSetChanged();
+        }
     }
 
     @Override

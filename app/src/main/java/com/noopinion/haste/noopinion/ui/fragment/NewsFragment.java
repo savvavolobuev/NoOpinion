@@ -9,9 +9,9 @@ import android.support.annotation.Nullable;
 import android.support.design.widget.AppBarLayout;
 import android.support.design.widget.CoordinatorLayout;
 import android.support.v4.app.Fragment;
+import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -32,7 +32,7 @@ import icepick.State;
 /**
  * Created by Ivan Gusev on 30.11.2015.
  */
-public final class NewsFragment extends Fragment implements NewsAdapter.Listener, AppBarLayout.OnOffsetChangedListener {
+public final class NewsFragment extends Fragment implements NewsAdapter.Listener, SwipeRefreshLayout.OnRefreshListener {
 
     public static final String TAG = NewsFragment.class.getName();
 
@@ -63,11 +63,6 @@ public final class NewsFragment extends Fragment implements NewsAdapter.Listener
     boolean mLoading   = false;
 
     /**
-     * NoView state variables:
-     */
-    boolean mSyncViewStateRequired;
-
-    /**
      * Android Views:
      */
     @Bind(R.id.content_animator)
@@ -80,8 +75,10 @@ public final class NewsFragment extends Fragment implements NewsAdapter.Listener
     @Bind(R.id.title)
     TextView          mTitleView;
 
+    @Bind(R.id.swipe_refresh_layout)
+    SwipeRefreshLayout mSwipeRefreshLayout;
     @Bind(R.id.recycler)
-    RecyclerView mRecyclerView;
+    RecyclerView       mRecyclerView;
 
     LinearLayoutManager mLayoutManager;
 
@@ -141,6 +138,8 @@ public final class NewsFragment extends Fragment implements NewsAdapter.Listener
         mRecyclerView.setAdapter(mNewsAdapter);
         mRecyclerView.addOnScrollListener(mOnScrollListener);
 
+        mSwipeRefreshLayout.setOnRefreshListener(this);
+
         syncViewState();
     }
 
@@ -152,21 +151,9 @@ public final class NewsFragment extends Fragment implements NewsAdapter.Listener
     }
 
     @Override
-    public void onResume() {
-        super.onResume();
-
-        mAppBarLayout.addOnOffsetChangedListener(this);
-    }
-
-    @Override
-    public void onPause() {
-        mAppBarLayout.removeOnOffsetChangedListener(this);
-
-        super.onPause();
-    }
-
-    @Override
     public void onDestroyView() {
+        mSwipeRefreshLayout.setOnRefreshListener(null);
+
         mRecyclerView.removeOnScrollListener(mOnScrollListener);
 
         ButterKnife.unbind(this);
@@ -191,15 +178,16 @@ public final class NewsFragment extends Fragment implements NewsAdapter.Listener
     }
 
     @Override
-    public void onOffsetChanged(final AppBarLayout appBarLayout, final int verticalOffset) {
-        Log.d(TAG, "");
+    public void onRefresh() {
+        loadNews(0);
     }
 
     private void syncViewState() {
-        if (getView() == null) {
-            mSyncViewStateRequired = true;
-        } else {
+        if (getView() != null) {
             mContentAnimator.setDisplayedChild(mViewState);
+            if (mSwipeRefreshLayout.isRefreshing()) {
+                mSwipeRefreshLayout.setRefreshing(false);
+            }
         }
     }
 
@@ -215,10 +203,13 @@ public final class NewsFragment extends Fragment implements NewsAdapter.Listener
                                     @Override
                                     public void run() {
                                         mLoading = false;
+                                        mNewsAdapter.changeCursor(cursor);
+
                                         if (downloaded == 0) {
                                             mNewsAdapter.disableProgress();
+                                        } else {
+                                            mNewsAdapter.enableProgress();
                                         }
-                                        mNewsAdapter.changeCursor(cursor);
 
                                         if (mStart == 0) {
                                             mStart = cursor.getCount();
