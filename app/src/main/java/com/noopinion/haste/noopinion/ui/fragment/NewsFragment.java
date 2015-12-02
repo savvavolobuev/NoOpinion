@@ -1,5 +1,6 @@
 package com.noopinion.haste.noopinion.ui.fragment;
 
+import android.app.ActivityOptions;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
@@ -8,6 +9,7 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.design.widget.AppBarLayout;
 import android.support.design.widget.CoordinatorLayout;
+import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.widget.LinearLayoutManager;
@@ -22,6 +24,7 @@ import com.noopinion.haste.noopinion.R;
 import com.noopinion.haste.noopinion.model.NewsCursor;
 import com.noopinion.haste.noopinion.provider.NewsProvider;
 import com.noopinion.haste.noopinion.provider.Providers;
+import com.noopinion.haste.noopinion.ui.activity.ImageActivity;
 import com.noopinion.haste.noopinion.ui.adapter.NewsAdapter;
 
 import butterknife.Bind;
@@ -35,7 +38,7 @@ import icepick.State;
 public final class NewsFragment extends Fragment implements NewsAdapter.Listener, SwipeRefreshLayout.OnRefreshListener {
 
     public static final String TAG = NewsFragment.class.getName();
-
+    public static final String INTENT_IMAGE = "intent_image";
     @NonNull
     public static NewsFragment create() {
         return new NewsFragment();
@@ -170,11 +173,19 @@ public final class NewsFragment extends Fragment implements NewsAdapter.Listener
     }
 
     @Override
-    public void onLinkClick(@NonNull final String link) {
+    public void onLinkClick(@NonNull final View view,@NonNull final String link) {
         final Intent browseIntent = new Intent(Intent.ACTION_VIEW).setData(Uri.parse(link));
         if (getActivity().getPackageManager().resolveActivity(browseIntent, 0) != null) {
             startActivity(browseIntent);
         }
+    }
+
+    @Override
+    public void onImageClick(@NonNull final View view, @NonNull final String image) {
+        Intent animIntent = new Intent(getActivity(),ImageActivity.class);
+        animIntent.putExtra(INTENT_IMAGE, image);
+        ActivityOptions options = ActivityOptions.makeSceneTransitionAnimation(getActivity(),view,"img");
+        ActivityCompat.startActivity(getActivity(), animIntent, options.toBundle());
     }
 
     @Override

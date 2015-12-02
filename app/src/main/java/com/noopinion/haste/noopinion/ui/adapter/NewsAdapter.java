@@ -16,8 +16,12 @@ import android.widget.TextView;
 import com.hannesdorfmann.adapterdelegates.AbsAdapterDelegate;
 import com.hannesdorfmann.adapterdelegates.AbsDelegationAdapter;
 import com.noopinion.haste.noopinion.R;
+import com.noopinion.haste.noopinion.model.News;
 import com.noopinion.haste.noopinion.model.NewsCursor;
 import com.squareup.picasso.Picasso;
+
+import java.util.HashSet;
+import java.util.Set;
 
 import butterknife.Bind;
 import butterknife.ButterKnife;
@@ -29,13 +33,15 @@ import butterknife.OnClick;
 public final class NewsAdapter extends AbsDelegationAdapter<NewsCursor> implements DelegationAdapter {
 
     public interface Listener {
-        void onLinkClick(@NonNull String link);
+        void onLinkClick(View view,@NonNull String link);
+        void onImageClick(View view,@NonNull String image);
     }
 
     private final Listener mListener;
 
     private boolean         mDataValid;
     private DataSetObserver mDataSetObserver;
+    private final Set<News> mBucket = new HashSet<>();
 
     private boolean mProgressEnabled = true;
 
@@ -65,18 +71,41 @@ public final class NewsAdapter extends AbsDelegationAdapter<NewsCursor> implemen
         }
     }
 
+    private boolean hasProgress(){
+        return mProgressEnabled;
+    }
+
     @Override
-    public void onLinkClick(final int adapterPosition) {
+    public void onLinkClick(@NonNull final View view,final int adapterPosition) {
         if (mDataValid && items != null && items.moveToPosition(adapterPosition)) {
             if (mListener != null) {
-                mListener.onLinkClick(items.getLink());
+                mListener.onLinkClick(view,items.getLink());
             }
         }
     }
 
     @Override
-    public boolean hasProgress() {
-        return mProgressEnabled;
+    public void onImageClick(@NonNull final View view ,final int adapterPosition) {
+        if (mDataValid && items != null && items.moveToPosition(adapterPosition)) {
+            if (mListener != null) {
+                mListener.onImageClick(view,items.getImage());
+            }
+        }
+    }
+
+    @Override
+    public boolean hasBucket() {
+        return !mBucket.isEmpty();
+    }
+
+    @Override
+    public int getBucketSize() {
+        return mBucket.size();
+    }
+
+    @Override
+    public void flushBucket() {
+
     }
 
     @Override
@@ -156,9 +185,16 @@ public final class NewsAdapter extends AbsDelegationAdapter<NewsCursor> implemen
 }
 
 interface DelegationAdapter {
-    void onLinkClick(final int adapterPosition);
+    void onLinkClick(View view,final int adapterPosition);
 
-    boolean hasProgress();
+    void onImageClick(View view,final int adapterPosition);
+
+    boolean hasBucket();
+
+    int getBucketSize();
+
+    void flushBucket();
+
 }
 
 abstract class BaseAdapterDelegate extends AbsAdapterDelegate<NewsCursor> {
@@ -229,7 +265,7 @@ class LessNewsDelegate extends NewsItemDelegate {
 
         @OnClick(R.id.link)
         public void onLinkClick() {
-            mDelegationAdapter.onLinkClick(getAdapterPosition());
+            mDelegationAdapter.onLinkClick(mLink,getAdapterPosition());
         }
     }
 }
@@ -254,7 +290,9 @@ final class FullNewsDelegate extends LessNewsDelegate {
             return !TextUtils.isEmpty(cursor.getImage());
         }
         return false;
+
     }
+
 
     @NonNull
     @Override
@@ -276,6 +314,10 @@ final class FullNewsDelegate extends LessNewsDelegate {
 
         public NewsFullViewHolder(final View itemView, final DelegationAdapter delegationAdapter) {
             super(itemView, delegationAdapter);
+        }
+        @OnClick(R.id.image)
+        public void onLinkClick() {
+            mDelegationAdapter.onImageClick(mImage, getAdapterPosition());
         }
     }
 }
