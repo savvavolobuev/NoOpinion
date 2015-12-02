@@ -23,7 +23,7 @@ public class NewsApiTest {
     public void checkGetNewsResponseIsSuccessful() {
         try {
             if (!new Retrofit.Builder().baseUrl(BuildConfig.BASE_URL).addConverterFactory(GsonConverterFactory.create()).build()
-                                       .create(NewsApi.class).getNews().execute().isSuccess()) {
+                                       .create(NewsApi.class).getNews(0, 10).execute().isSuccess()) {
                 throw new RuntimeException("Api call was not successful");
             }
         } catch (IOException e) {

@@ -12,9 +12,19 @@ android {
         versionCode 1
         versionName "1.0"
     }
+
+    signingConfigs {
+        noopinion {
+            storeFile new File(project.rootDir, 'noopinion.jks')
+            storePassword 'noopinion'
+            keyAlias 'androidkey'
+            keyPassword 'noopinion'
+        }
+    }
+
     buildTypes {
         release {
-            minifyEnabled false
+            signingConfig = signingConfigs.noopinion
 
             buildConfigField "String", "BASE_URL", "\"http://tolenka.ru\""
         }

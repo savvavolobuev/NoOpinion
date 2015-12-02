@@ -1,22 +1,14 @@
 package com.noopinion.haste.noopinion.provider;
 
-import android.support.annotation.NonNull;
-
 import com.noopinion.haste.noopinion.BuildConfig;
 import com.noopinion.haste.noopinion.model.News;
-import com.noopinion.haste.noopinion.model.NewsCursor;
 
-import org.junit.Assert;
-import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricGradleTestRunner;
-import org.robolectric.RuntimeEnvironment;
 import org.robolectric.annotation.Config;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Created by Ivan Gusev on 29.11.2015.
@@ -36,43 +28,6 @@ public class NewsProviderTest {
             n.setImage("http://image");
             n.setLink("http://link");
             FAKE_NEWS.add(n);
-        }
-    }
-
-    @Test
-    public void checkCache() {
-        final NewsProvider provider = Providers.createNewsProvider(RuntimeEnvironment.application);
-        ((NewsRemoteCachingProvider) provider).writeToCache(FAKE_NEWS);
-
-        Assert.assertEquals(FAKE_NEWS, ((NewsRemoteCachingProvider) provider).loadFromCache());
-    }
-
-    @Test
-    public void checkErrorCodeIsNone() {
-        final NewsProvider provider = Providers.createNewsProvider(RuntimeEnvironment.application);
-
-        final CountDownLatch latch = new CountDownLatch(1);
-
-        final AtomicInteger value = new AtomicInteger(NewsProvider.ERROR_NONE);
-
-        provider.loadNews(
-                new NewsProvider.Callback() {
-                    @Override
-                    public void onNewsReceived(@NonNull final NewsCursor news, @NewsProvider.ErrorCode final int errorCode) {
-                        value.set(errorCode);
-                        latch.countDown();
-                    }
-                }
-        );
-
-        try {
-            latch.await();
-        } catch (InterruptedException e) {
-            throw new RuntimeException("Latch has been passed by InterruptedException");
-        }
-
-        if (value.get() != NewsProvider.ERROR_NONE) {
-            throw new RuntimeException("Error code is " + value.get());
         }
     }
 }
