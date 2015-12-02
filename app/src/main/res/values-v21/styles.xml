@@ -2,10 +2,6 @@
 
     <!-- Base application theme. -->
     <style name="Theme.Base.App">
-        <item name="android:statusBarColor">@android:color/white</item>
-        <item name="android:windowFullscreen">true</item>
-        <item name="android:windowTranslucentStatus">true</item>
-        <item name="android:windowTranslucentNavigation">true</item>
     </style>
 
 </resources>

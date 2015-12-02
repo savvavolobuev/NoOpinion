@@ -1,6 +1,7 @@
 package com.noopinion.haste.noopinion.ui.adapter;
 
 import android.app.Activity;
+import android.database.DataSetObserver;
 import android.graphics.drawable.Drawable;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -13,15 +14,10 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.hannesdorfmann.adapterdelegates.AbsAdapterDelegate;
-import com.hannesdorfmann.adapterdelegates.ListDelegationAdapter;
+import com.hannesdorfmann.adapterdelegates.AbsDelegationAdapter;
 import com.noopinion.haste.noopinion.R;
-import com.noopinion.haste.noopinion.model.News;
+import com.noopinion.haste.noopinion.model.NewsCursor;
 import com.squareup.picasso.Picasso;
-
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
 
 import butterknife.Bind;
 import butterknife.ButterKnife;
@@ -30,7 +26,7 @@ import butterknife.OnClick;
 /**
  * Created by haste on 29.11.15.
  */
-public final class NewsAdapter extends ListDelegationAdapter<List<News>> implements DelegationAdapter {
+public final class NewsAdapter extends AbsDelegationAdapter<NewsCursor> implements DelegationAdapter {
 
     public interface Listener {
         void onLinkClick(@NonNull String link);
@@ -38,69 +34,112 @@ public final class NewsAdapter extends ListDelegationAdapter<List<News>> impleme
 
     private final Listener mListener;
 
-    private final Set<News> mBucket = new HashSet<>();
+    private boolean         mDataValid;
+    private DataSetObserver mDataSetObserver;
+
+    private boolean mProgressEnabled = true;
 
     public NewsAdapter(@NonNull final Activity activity, @Nullable final Listener listener) {
         mListener = listener;
-        setItems(new ArrayList<News>());
         setHasStableIds(true);
+        mDataSetObserver = new NotifyingDataSetObserver();
 
-        delegatesManager.addDelegate(new NewsBucketDelegate(activity, this, 0));
-        delegatesManager.addDelegate(new FullNewsDelegate(activity, this, 1));
-        delegatesManager.addDelegate(new LessNewsDelegate(activity, this, 2));
+        delegatesManager.addDelegate(new FullNewsDelegate(activity, this, 0));
+        delegatesManager.addDelegate(new LessNewsDelegate(activity, this, 1));
+        delegatesManager.addDelegate(new ProgressDelegate(activity, this, 2));
     }
 
-    public void addToBucket(@NonNull final News news) {
-        final boolean hadBucket = hasBucket();
+    public void disableProgress() {
+        mProgressEnabled = false;
 
-        mBucket.add(news);
-
-        if (hadBucket) {
-            notifyItemChanged(0);
-        } else {
-            notifyItemInserted(0);
-        }
+        notifyItemRemoved(items.getCount());
     }
 
     @Override
     public void onLinkClick(final int adapterPosition) {
-        if (mListener != null) {
-            mListener.onLinkClick(items.get(adapterPosition).getLink());
+        if (mDataValid && items != null && items.moveToPosition(adapterPosition)) {
+            if (mListener != null) {
+                mListener.onLinkClick(items.getLink());
+            }
         }
     }
 
     @Override
-    public boolean hasBucket() {
-        return !mBucket.isEmpty();
+    public boolean hasProgress() {
+        return mProgressEnabled;
     }
 
     @Override
-    public int getBucketSize() {
-        return mBucket.size();
-    }
-
-    @Override
-    public void flushBucket() {
-
-    }
-
-    @Override
-    public long getItemId(final int position) {
-        if (hasBucket() && position == 0) {
-            return -1;
+    public int getItemCount() {
+        int count = hasProgress() ? 1 : 0;
+        if (mDataValid && items != null) {
+            count += items.getCount();
         }
 
-        return items.get(hasBucket() ? position - 1 : position).getId();
+        return count;
     }
 
     @Override
-    public void setItems(@NonNull final List<News> items) {
-        final List<News> existing = getItems();
-        if (existing == null) {
-            super.setItems(items);
+    public long getItemId(int position) {
+        if (mDataValid && items != null && items.moveToPosition(position)) {
+            return items.getId();
+        }
+
+        return 0;
+    }
+
+    /**
+     * Change the underlying cursor to a new cursor. If there is an existing cursor it will be closed.
+     */
+    public void changeCursor(@Nullable final NewsCursor cursor) {
+        final NewsCursor old = swapCursor(cursor);
+        if (old != null) {
+            old.close();
+        }
+    }
+
+    /**
+     * Swap in a new Cursor, returning the old Cursor.  Unlike {@link #changeCursor(NewsCursor)}, the returned old Cursor is <em>not</em> closed.
+     */
+    @Nullable
+    public NewsCursor swapCursor(@Nullable final NewsCursor newCursor) {
+        if (newCursor == items) {
+            return null;
+        }
+
+        final NewsCursor oldCursor = items;
+        if (oldCursor != null && mDataSetObserver != null) {
+            oldCursor.unregisterDataSetObserver(mDataSetObserver);
+        }
+        items = newCursor;
+        if (items != null) {
+            if (mDataSetObserver != null) {
+                items.registerDataSetObserver(mDataSetObserver);
+            }
+            mDataValid = true;
+            notifyDataSetChanged();
         } else {
-            existing.clear();
-            existing.addAll(items);
+            mDataValid = false;
+            //There is no notifyDataSetInvalidated() method in RecyclerView.Adapter
+            notifyDataSetChanged();
+        }
+
+        return oldCursor;
+    }
+
+    private class NotifyingDataSetObserver extends DataSetObserver {
+        @Override
+        public void onChanged() {
+            super.onChanged();
+            mDataValid = true;
+            notifyDataSetChanged();
+        }
+
+        @Override
+        public void onInvalidated() {
+            super.onInvalidated();
+            mDataValid = false;
+            //There is no notifyDataSetInvalidated() method in RecyclerView.Adapter
             notifyDataSetChanged();
         }
     }
@@ -109,14 +148,10 @@ public final class NewsAdapter extends ListDelegationAdapter<List<News>> impleme
 interface DelegationAdapter {
     void onLinkClick(final int adapterPosition);
 
-    boolean hasBucket();
-
-    int getBucketSize();
-
-    void flushBucket();
+    boolean hasProgress();
 }
 
-abstract class BaseAdapterDelegate extends AbsAdapterDelegate<List<News>> {
+abstract class BaseAdapterDelegate extends AbsAdapterDelegate<NewsCursor> {
 
     final DelegationAdapter mDelegationAdapter;
     final LayoutInflater    mInflater;
@@ -128,51 +163,25 @@ abstract class BaseAdapterDelegate extends AbsAdapterDelegate<List<News>> {
     }
 }
 
-final class NewsBucketDelegate extends BaseAdapterDelegate {
+abstract class NewsItemDelegate extends BaseAdapterDelegate {
 
-    NewsBucketDelegate(@NonNull final Activity activity, @NonNull final DelegationAdapter delegationAdapter, final int viewType) {
+    NewsItemDelegate(@NonNull final Activity activity, @NonNull final DelegationAdapter delegationAdapter, final int viewType) {
         super(activity, delegationAdapter, viewType);
-    }
-
-    @Override
-    public boolean isForViewType(@NonNull final List<News> items, final int position) {
-        return mDelegationAdapter.hasBucket() && position == 0;
-    }
-
-    @NonNull
-    @Override
-    public RecyclerView.ViewHolder onCreateViewHolder(final ViewGroup parent) {
-        return new NewsBucketViewHolder(mInflater.inflate(R.layout.item_news_bucket, parent, false));
-    }
-
-    @Override
-    public void onBindViewHolder(@NonNull final List<News> items, final int position, @NonNull final RecyclerView.ViewHolder holder) {
-        NewsBucketViewHolder vh = (NewsBucketViewHolder) holder;
-        vh.mBucketLabel.setText(vh.mBucketLabel.getResources().getString(R.string.open_news_bucket, mDelegationAdapter.getBucketSize()));
-    }
-
-    static class NewsBucketViewHolder extends RecyclerView.ViewHolder {
-
-        @Bind(R.id.bucket_label)
-        TextView mBucketLabel;
-
-        public NewsBucketViewHolder(final View itemView) {
-            super(itemView);
-
-            ButterKnife.bind(this, itemView);
-        }
     }
 }
 
-class LessNewsDelegate extends BaseAdapterDelegate {
+class LessNewsDelegate extends NewsItemDelegate {
 
     LessNewsDelegate(@NonNull final Activity activity, @NonNull final DelegationAdapter delegationAdapter, final int viewType) {
         super(activity, delegationAdapter, viewType);
     }
 
     @Override
-    public boolean isForViewType(@NonNull final List<News> items, final int position) {
-        return TextUtils.isEmpty((mDelegationAdapter.hasBucket() ? items.get(position - 1) : items.get(position)).getImage());
+    public boolean isForViewType(@NonNull final NewsCursor cursor, final int position) {
+        if (cursor.moveToPosition(position)) {
+            return TextUtils.isEmpty(cursor.getImage());
+        }
+        return false;
     }
 
     @NonNull
@@ -182,14 +191,15 @@ class LessNewsDelegate extends BaseAdapterDelegate {
     }
 
     @Override
-    public void onBindViewHolder(@NonNull final List<News> items, final int position, @NonNull final RecyclerView.ViewHolder holder) {
-        redraw((NewsLessViewHolder) holder, items.get(position));
+    public void onBindViewHolder(@NonNull final NewsCursor cursor, final int position, @NonNull final RecyclerView.ViewHolder holder) {
+        cursor.moveToPosition(position);
+        redraw((NewsLessViewHolder) holder, cursor);
     }
 
-    protected void redraw(@NonNull final NewsLessViewHolder vh, @NonNull final News n) {
-        vh.mText.setText(n.getText());
-        vh.mLink.setVisibility(TextUtils.isEmpty(n.getLink()) ? View.GONE : View.VISIBLE);
-        vh.mLink.setTag(n.getLink());
+    protected void redraw(@NonNull final NewsLessViewHolder vh, @NonNull final NewsCursor cursor) {
+        vh.mText.setText(cursor.getText());
+        vh.mLink.setVisibility(TextUtils.isEmpty(cursor.getLink()) ? View.GONE : View.VISIBLE);
+        vh.mLink.setTag(cursor.getLink());
     }
 
     static class NewsLessViewHolder extends RecyclerView.ViewHolder {
@@ -229,8 +239,11 @@ final class FullNewsDelegate extends LessNewsDelegate {
     }
 
     @Override
-    public boolean isForViewType(@NonNull final List<News> news, final int position) {
-        return !super.isForViewType(news, position);
+    public boolean isForViewType(@NonNull final NewsCursor cursor, final int position) {
+        if (cursor.moveToPosition(position)) {
+            return !TextUtils.isEmpty(cursor.getImage());
+        }
+        return false;
     }
 
     @NonNull
@@ -240,10 +253,10 @@ final class FullNewsDelegate extends LessNewsDelegate {
     }
 
     @Override
-    protected void redraw(@NonNull final NewsLessViewHolder vh, @NonNull final News n) {
-        super.redraw(vh, n);
+    protected void redraw(@NonNull final NewsLessViewHolder vh, @NonNull final NewsCursor cursor) {
+        super.redraw(vh, cursor);
 
-        Picasso.with(vh.itemView.getContext()).load(n.getImage()).error(mTintedErrorDrawable).into(((NewsFullViewHolder) vh).mImage);
+        Picasso.with(vh.itemView.getContext()).load(cursor.getImage()).error(mTintedErrorDrawable).into(((NewsFullViewHolder) vh).mImage);
     }
 
     static final class NewsFullViewHolder extends NewsLessViewHolder {
@@ -253,6 +266,35 @@ final class FullNewsDelegate extends LessNewsDelegate {
 
         public NewsFullViewHolder(final View itemView, final DelegationAdapter delegationAdapter) {
             super(itemView, delegationAdapter);
+        }
+    }
+}
+
+final class ProgressDelegate extends BaseAdapterDelegate {
+
+    ProgressDelegate(@NonNull final Activity activity, @NonNull final DelegationAdapter delegationAdapter, final int viewType) {
+        super(activity, delegationAdapter, viewType);
+    }
+
+    @Override
+    public boolean isForViewType(@NonNull final NewsCursor cursor, final int position) {
+        return position == cursor.getCount();
+    }
+
+    @NonNull
+    @Override
+    public RecyclerView.ViewHolder onCreateViewHolder(final ViewGroup parent) {
+        return new ProgressViewHolder(mInflater.inflate(R.layout.item_progress, parent, false));
+    }
+
+    @Override
+    public void onBindViewHolder(@NonNull final NewsCursor cursor, final int position, @NonNull final RecyclerView.ViewHolder holder) {
+    }
+
+    static final class ProgressViewHolder extends RecyclerView.ViewHolder {
+
+        public ProgressViewHolder(final View itemView) {
+            super(itemView);
         }
     }
 }

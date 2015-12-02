@@ -5,6 +5,8 @@ import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
+import android.database.DataSetObserver;
+import android.database.MatrixCursor;
 import android.net.Uri;
 import android.provider.BaseColumns;
 import android.support.annotation.IntDef;
@@ -16,11 +18,11 @@ import android.util.Log;
 import com.noopinion.haste.noopinion.BuildConfig;
 import com.noopinion.haste.noopinion.model.News;
 import com.noopinion.haste.noopinion.model.NewsApiResponse;
+import com.noopinion.haste.noopinion.model.NewsCursor;
 import com.noopinion.haste.noopinion.model.db.NewsContentProvider;
 import com.noopinion.haste.noopinion.provider.api.NewsApi;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -37,7 +39,7 @@ public interface NewsProvider {
     void loadNews(int start, int limit, @Nullable Callback callback);
 
     interface Callback {
-        void onNewsReceived(@NonNull List<News> news, @ErrorCode int errorCode);
+        void onNewsReceived(@NonNull NewsCursor cursor, int downloaded, @ErrorCode int errorCode);
     }
 
     int ERROR_NONE                = 0;
@@ -71,11 +73,14 @@ final class NewsRemoteCachingProvider implements NewsProvider {
                     @Override
                     public void run() {
                         int errorCode = ERROR_NONE;
+                        int downloaded = 0;
                         try {
                             try {
                                 final Response<NewsApiResponse> response = mApi.getNews(start, limit).execute();
                                 if (response.isSuccess()) {
-                                    mLocalProvider.cacheNews(response.body().getNews());
+                                    final List<News> downloadedNews = response.body().getNews();
+                                    downloaded = downloadedNews.size();
+                                    mLocalProvider.cacheNews(downloadedNews);
                                 } else {
                                     errorCode = ERROR_UNKNOWN;
                                 }
@@ -86,7 +91,7 @@ final class NewsRemoteCachingProvider implements NewsProvider {
                             Log.e("NewsRemoteCachingProvider", t.getMessage(), t);
                         } finally {
                             if (callback != null) {
-                                callback.onNewsReceived(mLocalProvider.loadNews(), errorCode);
+                                callback.onNewsReceived(mLocalProvider.loadNews(start, limit), downloaded, errorCode);
                             }
                         }
                     }
@@ -105,30 +110,17 @@ final class NewsLocalProvider {
 
     @VisibleForTesting
     @NonNull
-    List<News> loadNews() {
-        final List<News> news = new ArrayList<>();
+    NewsCursor loadNews(final int start, final int limit) {
+        final Cursor cursor = mContentResolver.query(NewsContentProvider.CONTENT_URI, null, null, null, null);
 
-        final Cursor cursor = mContentResolver.query(
-                NewsContentProvider.CONTENT_URI,
-                null, null, null, null
-        );
-        News n;
         if (cursor != null && cursor.moveToFirst()) {
-            do {
-                n = new News();
-                n.setId(cursor.getInt(cursor.getColumnIndex(BaseColumns._ID)));
-                n.setText(cursor.getString(cursor.getColumnIndex("txt")));
-                n.setLink(cursor.getString(cursor.getColumnIndex("link")));
-                n.setImage(cursor.getString(cursor.getColumnIndex("image")));
-
-                news.add(n);
-            } while (cursor.moveToNext());
+            return new NewsCursorImpl(cursor);
         }
         if (cursor != null) {
             cursor.close();
         }
 
-        return news;
+        return new NewsCursorImpl(new MatrixCursor(new String[]{BaseColumns._ID, "txt", "link", "image"}, 0));
     }
 
     @VisibleForTesting
@@ -147,5 +139,62 @@ final class NewsLocalProvider {
         }
 
         mContentResolver.bulkInsert(Uri.parse("content://" + NewsContentProvider.AUTHORITY + "/news"), values);
+    }
+
+    static final class NewsCursorImpl implements NewsCursor {
+
+        private final Cursor mCursor;
+
+        public NewsCursorImpl(@NonNull final Cursor cursor) {
+            mCursor = cursor;
+        }
+
+        @Override
+        public long getId() {
+            return mCursor.getLong(mCursor.getColumnIndex(BaseColumns._ID));
+        }
+
+        @NonNull
+        @Override
+        public String getText() {
+            return mCursor.getString(mCursor.getColumnIndex("txt"));
+        }
+
+        @NonNull
+        @Override
+        public String getLink() {
+            return mCursor.getString(mCursor.getColumnIndex("link"));
+        }
+
+        @NonNull
+        @Override
+        public String getImage() {
+            return mCursor.getString(mCursor.getColumnIndex("image"));
+        }
+
+        @Override
+        public void close() {
+            mCursor.close();
+        }
+
+        @Override
+        public int getCount() {
+            return mCursor.getCount();
+        }
+
+        @Override
+        public boolean moveToPosition(final int position) {
+            return mCursor.moveToPosition(position);
+        }
+
+        @Override
+        public void registerDataSetObserver(@NonNull final DataSetObserver observer) {
+            mCursor.registerDataSetObserver(observer);
+        }
+
+        @Override
+        public void unregisterDataSetObserver(@NonNull final DataSetObserver observer) {
+            mCursor.unregisterDataSetObserver(observer);
+        }
     }
 }
