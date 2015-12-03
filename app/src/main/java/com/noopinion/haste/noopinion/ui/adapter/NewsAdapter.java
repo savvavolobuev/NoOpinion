@@ -39,7 +39,7 @@ public final class NewsAdapter extends AbsDelegationAdapter<NewsCursor> implemen
 
     private final Listener mListener;
 
-    private boolean         mDataValid;
+    private boolean mDataValid;
     private DataSetObserver mDataSetObserver;
 
     private boolean mProgressEnabled = true;
@@ -115,6 +115,9 @@ public final class NewsAdapter extends AbsDelegationAdapter<NewsCursor> implemen
      * Change the underlying cursor to a new cursor. If there is an existing cursor it will be closed.
      */
     public void changeCursor(@Nullable final NewsCursor cursor) {
+        if (cursor == null) {
+            return;
+        }
         final NewsCursor old = swapCursor(cursor);
         if (old != null) {
             old.close();
@@ -177,7 +180,7 @@ interface DelegationAdapter {
 abstract class BaseAdapterDelegate extends AbsAdapterDelegate<NewsCursor> {
 
     final DelegationAdapter mDelegationAdapter;
-    final LayoutInflater    mInflater;
+    final LayoutInflater mInflater;
 
     BaseAdapterDelegate(@NonNull final Activity activity, @NonNull final DelegationAdapter delegationAdapter, final int viewType) {
         super(viewType);
@@ -228,7 +231,7 @@ class LessNewsDelegate extends NewsItemDelegate {
     static class NewsLessViewHolder extends RecyclerView.ViewHolder {
 
         @Bind(R.id.text)
-        TextView  mText;
+        TextView mText;
         @Bind(R.id.link)
         ImageView mLink;
 

@@ -27,6 +27,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="16dp"
+            android:adjustViewBounds="true"
             android:minHeight="64dp"
             tools:src="@drawable/ic_sad_face"
             tools:tint="?android:colorPrimary"/>
