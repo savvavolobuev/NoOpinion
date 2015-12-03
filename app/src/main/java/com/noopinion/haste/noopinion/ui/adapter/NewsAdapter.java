@@ -54,6 +54,14 @@ public final class NewsAdapter extends AbsDelegationAdapter<NewsCursor> implemen
         delegatesManager.addDelegate(new ProgressDelegate(activity, this, 2));
     }
 
+    @Override
+    public int getItemViewType(final int position) {
+        if (items == null){
+            return 2;
+        }
+        return super.getItemViewType(position);
+    }
+
     public void enableProgress() {
         mProgressEnabled = true;
 
@@ -115,9 +123,6 @@ public final class NewsAdapter extends AbsDelegationAdapter<NewsCursor> implemen
      * Change the underlying cursor to a new cursor. If there is an existing cursor it will be closed.
      */
     public void changeCursor(@Nullable final NewsCursor cursor) {
-        if (cursor == null) {
-            return;
-        }
         final NewsCursor old = swapCursor(cursor);
         if (old != null) {
             old.close();
