@@ -294,7 +294,7 @@ final class FullNewsDelegate extends LessNewsDelegate {
         }
 
         @OnClick(R.id.image)
-        public void onLinkClick() {
+        public void onImageClick() {
             mDelegationAdapter.onImageClick(mImage, getAdapterPosition());
         }
     }
