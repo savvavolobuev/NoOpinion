@@ -15,6 +15,7 @@ import com.squareup.picasso.Picasso;
 
 import butterknife.Bind;
 import butterknife.ButterKnife;
+import butterknife.OnClick;
 
 /**
  * Created by haste on 01.12.15.
@@ -46,6 +47,11 @@ public class ImageActivity extends AppCompatActivity {
                .load(getIntent().getStringExtra(NewsFragment.INTENT_IMAGE))
                .error(mTintedErrorDrawable)
                .into(mImageView);
+    }
+
+    @OnClick(R.id.image)
+    void imageClick(){
+        onBackPressed();
     }
 
     @Override
