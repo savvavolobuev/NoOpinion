@@ -26,16 +26,22 @@
             android:id="@+id/image"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp"
             android:adjustViewBounds="true"
             android:minHeight="64dp"
             tools:src="@drawable/ic_sad_face"
             tools:tint="?android:colorPrimary"/>
 
+        <View
+            android:id="@+id/separator"
+            android:layout_width="1dp"
+            android:layout_height="16dp"/>
+
         <LinearLayout
+            android:id="@+id/line"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal">
+            android:orientation="horizontal"
+            android:visibility="gone">
 
             <TextView
                 android:id="@+id/text"
@@ -46,8 +52,8 @@
                 android:textColor="?android:textColorPrimaryInverse"
                 android:textSize="16sp"
 
-                tools:text="Тут написан рандомный текст для превью"
-                tools:ignore="RtlHardcoded"/>
+                tools:ignore="RtlHardcoded"
+                tools:text="Тут написан рандомный текст для превью"/>
 
             <ImageView
                 android:id="@+id/link"

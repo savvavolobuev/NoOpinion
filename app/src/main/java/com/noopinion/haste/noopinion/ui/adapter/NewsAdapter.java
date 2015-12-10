@@ -14,6 +14,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import com.hannesdorfmann.adapterdelegates.AbsAdapterDelegate;
@@ -56,7 +57,7 @@ public final class NewsAdapter extends AbsDelegationAdapter<NewsCursor> implemen
 
     @Override
     public int getItemViewType(final int position) {
-        if (items == null){
+        if (items == null) {
             return 2;
         }
         return super.getItemViewType(position);
@@ -288,7 +289,17 @@ final class FullNewsDelegate extends LessNewsDelegate {
     @Override
     protected void redraw(@NonNull final NewsLessViewHolder vh, @NonNull final NewsCursor cursor) {
         super.redraw(vh, cursor);
-
+        if (TextUtils.isEmpty(cursor.getLink()) && TextUtils.isEmpty(cursor.getText())) {
+            ((NewsFullViewHolder) vh).line.setVisibility(View.GONE);
+        } else {
+            ((NewsFullViewHolder) vh).line.setVisibility(View.VISIBLE);
+        }
+        ((NewsFullViewHolder) vh).space.setVisibility(View.GONE);
+        if (!TextUtils.isEmpty(cursor.getImage())){
+            if (!TextUtils.isEmpty(cursor.getLink())||!TextUtils.isEmpty(cursor.getText())){
+                ((NewsFullViewHolder) vh).space.setVisibility(View.VISIBLE);
+            }
+        }
         Picasso.with(vh.itemView.getContext()).load(cursor.getImage()).error(mTintedErrorDrawable).into(((NewsFullViewHolder) vh).mImage);
     }
 
@@ -296,6 +307,10 @@ final class FullNewsDelegate extends LessNewsDelegate {
 
         @Bind(R.id.image)
         ImageView mImage;
+        @Bind(R.id.line)
+        LinearLayout line;
+        @Bind(R.id.separator)
+        View space;
 
         public NewsFullViewHolder(final View itemView, final DelegationAdapter delegationAdapter) {
             super(itemView, delegationAdapter);
