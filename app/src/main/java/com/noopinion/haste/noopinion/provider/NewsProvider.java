@@ -136,7 +136,7 @@ final class NewsLocalProvider {
             cursor.close();
         }
 
-        return new NewsCursorImpl(new MatrixCursor(new String[]{BaseColumns._ID, "txt", "link", "image"}, 0));
+        return new NewsCursorImpl(new MatrixCursor(new String[]{BaseColumns._ID, "txt", "link", "image","date"}, 0));
     }
 
     @VisibleForTesting
@@ -160,6 +160,7 @@ final class NewsLocalProvider {
             cv.put("txt", n.getText());
             cv.put("link", n.getLink());
             cv.put("image", n.getImage());
+            cv.put("date",n.getDate());
             values[counter++] = cv;
         }
 
@@ -195,6 +196,12 @@ final class NewsLocalProvider {
         @Override
         public String getImage() {
             return mCursor.getString(mCursor.getColumnIndex("image"));
+        }
+
+        @NonNull
+        @Override
+        public long getDate() {
+            return mCursor.getLong(mCursor.getColumnIndex("date"));
         }
 
         @Override

@@ -17,8 +17,8 @@ import android.support.annotation.Nullable;
  */
 public final class NewsContentProvider extends ContentProvider {
 
-    public static final String AUTHORITY   = "com.noopinion.haste.noopinion.provider.news";
-    public static final Uri    CONTENT_URI = Uri.parse("content://" + AUTHORITY + "/news");
+    public static final String AUTHORITY = "com.noopinion.haste.noopinion.provider.news";
+    public static final Uri CONTENT_URI = Uri.parse("content://" + AUTHORITY + "/news");
 
     private DBOpenHelper mOpenHelper;
 
@@ -110,14 +110,15 @@ public final class NewsContentProvider extends ContentProvider {
 
 final class DBOpenHelper extends SQLiteOpenHelper {
 
-    public static final String DB_NAME    = "news.db";
-    public static final int    DB_VERSION = 1;
+    public static final String DB_NAME = "news.db";
+    public static final int DB_VERSION = 2;
 
     public static final String CREATE_TABLE = "" +
             "CREATE TABLE news (\n" +
             "_id INTEGER PRIMARY KEY,\n" +
             "txt TEXT,\n" +
             "link TEXT,\n" +
+            "date INTEGER,\n" +
             "image TEXT);";
 
     public DBOpenHelper(final Context context) {
@@ -138,6 +139,9 @@ final class DBOpenHelper extends SQLiteOpenHelper {
 
     @Override
     public void onUpgrade(final SQLiteDatabase db, final int oldVersion, final int newVersion) {
-
+         if (newVersion>oldVersion){
+             db.execSQL("DROP TABLE IF EXISTS news");
+             db.execSQL(CREATE_TABLE);
+         }
     }
 }

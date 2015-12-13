@@ -21,6 +21,9 @@ public interface NewsCursor extends Closeable {
     @NonNull
     String getImage();
 
+    @NonNull
+    long getDate();
+
     void close();
 
     int getCount();

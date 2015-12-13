@@ -15,12 +15,14 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import com.hannesdorfmann.adapterdelegates.AbsAdapterDelegate;
 import com.hannesdorfmann.adapterdelegates.AbsDelegationAdapter;
 import com.noopinion.haste.noopinion.R;
 import com.noopinion.haste.noopinion.model.NewsCursor;
+import com.noopinion.haste.noopinion.utils.DateUtils;
 import com.squareup.picasso.Picasso;
 
 import butterknife.Bind;
@@ -232,6 +234,10 @@ class LessNewsDelegate extends NewsItemDelegate {
         vh.mText.setText(cursor.getText());
         vh.mLink.setVisibility(TextUtils.isEmpty(cursor.getLink()) ? View.GONE : View.VISIBLE);
         vh.mLink.setTag(cursor.getLink());
+
+        String dateString = DateUtils.parseDate(cursor.getDate());
+        vh.date.setText(dateString);
+        vh.date.setVisibility(TextUtils.isEmpty(dateString) ? View.GONE : View.VISIBLE);
     }
 
     static class NewsLessViewHolder extends RecyclerView.ViewHolder {
@@ -240,6 +246,8 @@ class LessNewsDelegate extends NewsItemDelegate {
         TextView mText;
         @Bind(R.id.link)
         ImageView mLink;
+        @Bind(R.id.date)
+        TextView date;
 
         protected final DelegationAdapter mDelegationAdapter;
 
@@ -295,12 +303,13 @@ final class FullNewsDelegate extends LessNewsDelegate {
             ((NewsFullViewHolder) vh).line.setVisibility(View.VISIBLE);
         }
         ((NewsFullViewHolder) vh).space.setVisibility(View.GONE);
-        if (!TextUtils.isEmpty(cursor.getImage())){
-            if (!TextUtils.isEmpty(cursor.getLink())||!TextUtils.isEmpty(cursor.getText())){
+        if (!TextUtils.isEmpty(cursor.getImage())) {
+            if (!TextUtils.isEmpty(cursor.getLink()) || !TextUtils.isEmpty(cursor.getText())) {
                 ((NewsFullViewHolder) vh).space.setVisibility(View.VISIBLE);
             }
         }
         Picasso.with(vh.itemView.getContext()).load(cursor.getImage()).error(mTintedErrorDrawable).into(((NewsFullViewHolder) vh).mImage);
+        ((NewsFullViewHolder) vh).mProgressBar.setVisibility(View.VISIBLE);
     }
 
     static final class NewsFullViewHolder extends NewsLessViewHolder {
@@ -311,6 +320,9 @@ final class FullNewsDelegate extends LessNewsDelegate {
         LinearLayout line;
         @Bind(R.id.separator)
         View space;
+        @Bind (R.id.imageProgress)
+        ProgressBar mProgressBar;
+
 
         public NewsFullViewHolder(final View itemView, final DelegationAdapter delegationAdapter) {
             super(itemView, delegationAdapter);
@@ -318,6 +330,7 @@ final class FullNewsDelegate extends LessNewsDelegate {
 
         @OnClick(R.id.image)
         public void onImageClick() {
+            mProgressBar.setVisibility(View.INVISIBLE);
             mDelegationAdapter.onImageClick(mImage, getAdapterPosition());
         }
     }

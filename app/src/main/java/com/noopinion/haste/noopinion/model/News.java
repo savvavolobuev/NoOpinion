@@ -20,6 +20,16 @@ public final class News implements Parcelable {
     String mLink;
     @SerializedName("image")
     String mImage;
+    @SerializedName("date")
+    long mDate;
+
+    public void setDate(final long date) {
+        this.mDate = date;
+    }
+
+    public long getDate() {
+        return mDate;
+    }
 
     public int getId() {
         return mId;
@@ -61,6 +71,7 @@ public final class News implements Parcelable {
         final News news = (News) o;
 
         if (mId != news.mId) return false;
+        if (mDate != news.mDate) return false;
         if (mText != null ? !mText.equals(news.mText) : news.mText != null) return false;
         if (mLink != null ? !mLink.equals(news.mLink) : news.mLink != null) return false;
         return !(mImage != null ? !mImage.equals(news.mImage) : news.mImage != null);
@@ -73,17 +84,13 @@ public final class News implements Parcelable {
         result = 31 * result + (mText != null ? mText.hashCode() : 0);
         result = 31 * result + (mLink != null ? mLink.hashCode() : 0);
         result = 31 * result + (mImage != null ? mImage.hashCode() : 0);
+        result = 31 * result + (int) (mDate ^ (mDate >>> 32));
         return result;
     }
 
     @Override
     public String toString() {
-        return "News{" +
-                "mId=" + mId +
-                ", mText='" + mText + '\'' +
-                ", mLink='" + mLink + '\'' +
-                ", mImage='" + mImage + '\'' +
-                '}';
+        return super.toString();
     }
 
     @Override
